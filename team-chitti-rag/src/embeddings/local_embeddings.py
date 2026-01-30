@@ -39,12 +39,28 @@ class LocalEmbeddings:
         """Load the sentence transformer model"""
         try:
             logger.info("📥 Loading sentence transformer model... (this may take a few minutes)")
-            
-            self.model = SentenceTransformer(
-                self.model_name,
-                cache_folder=self.cache_dir,
-                device=self.device
-            )
+
+            # Prefer offline/local loading to avoid timeouts/rate limits in Codespaces.
+            # If the model isn't present in cache, we fall back to online loading.
+            prefer_local_only = os.getenv("EMBEDDINGS_LOCAL_ONLY", "true").lower() in {"1", "true", "yes"}
+
+            try:
+                self.model = SentenceTransformer(
+                    self.model_name,
+                    cache_folder=self.cache_dir,
+                    device=self.device,
+                    local_files_only=prefer_local_only,
+                )
+            except Exception:
+                if not prefer_local_only:
+                    raise
+                logger.warning("⚠️  Local-only embeddings load failed; retrying with network allowed...")
+                self.model = SentenceTransformer(
+                    self.model_name,
+                    cache_folder=self.cache_dir,
+                    device=self.device,
+                    local_files_only=False,
+                )
             
             self.model_loaded = True
             

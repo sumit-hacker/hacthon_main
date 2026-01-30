@@ -41,7 +41,7 @@ class TinyLlamaLocalLLM:
         """Load the TinyLlama model and tokenizer"""
         try:
             logger.info("📥 Loading TinyLlama model... (smaller model, faster loading)")
-            
+
             # Load tokenizer
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.model_name,
@@ -156,12 +156,13 @@ class TinyLlamaLocalLLM:
             # Generate
             with torch.no_grad():
                 outputs = self.model.generate(
-                    inputs.input_ids,
+                    input_ids=inputs["input_ids"],
+                    attention_mask=inputs.get("attention_mask"),
                     **generation_params
                 )
             
             # Decode only the new tokens
-            new_tokens = outputs[0][inputs.input_ids.shape[1]:]
+            new_tokens = outputs[0][inputs["input_ids"].shape[1]:]
             response = self.tokenizer.decode(new_tokens, skip_special_tokens=True)
             
             # Clean up the response

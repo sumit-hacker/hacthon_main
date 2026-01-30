@@ -374,29 +374,50 @@ class DocumentProcessor:
         """Split text into chunks with overlap"""
         if len(text) <= self.chunk_size:
             return [text]
+
+        # Ensure overlap cannot prevent forward progress.
+        effective_chunk_size = max(int(self.chunk_size), 1)
+        effective_overlap = max(int(self.chunk_overlap), 0)
+        if effective_overlap >= effective_chunk_size:
+            effective_overlap = max(effective_chunk_size - 1, 0)
         
         chunks = []
         start = 0
         
         while start < len(text):
-            end = start + self.chunk_size
+            # Clamp start/end into valid range.
+            if start < 0:
+                start = 0
+
+            end = start + effective_chunk_size
+            if end > len(text):
+                end = len(text)
             
             # Try to break at sentence boundary
             if end < len(text):
                 # Look for sentence endings
                 for boundary in ['. ', '.\n', '! ', '!\n', '? ', '?\n']:
                     last_boundary = text.rfind(boundary, start, end)
-                    if last_boundary != -1:
+                    # Only accept boundaries that actually advance the window.
+                    if last_boundary != -1 and last_boundary > start:
                         end = last_boundary + len(boundary)
                         break
+
+            # Safety: ensure end always advances beyond start.
+            if end <= start:
+                end = min(start + effective_chunk_size, len(text))
+                if end <= start:
+                    break
             
             chunk = text[start:end].strip()
             if chunk:
                 chunks.append(chunk)
             
-            start = end - self.chunk_overlap
-            if start >= len(text):
-                break
+            next_start = end - effective_overlap
+            # Safety: never allow next_start to go backwards or stall.
+            if next_start <= start:
+                next_start = start + 1
+            start = next_start
         
         return chunks
     

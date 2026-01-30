@@ -1,0 +1,27 @@
+# Python
+**/__pycache__/
+*.py[cod]
+*.pyd
+*.pyo
+.pytest_cache/
+.mypy_cache/
+
+# Env / secrets
+team-chitti-rag/.env
+
+# Local artifacts (large/generated)
+team-chitti-rag/models/
+team-chitti-rag/data/
+team-chitti-rag/logs/
+
+# Node / frontend
+**/node_modules/
+**/dist/
+**/.vite/
+
+# OS / editor
+.DS_Store
+.vscode/
+
+# Scratch
+bash_runned.md

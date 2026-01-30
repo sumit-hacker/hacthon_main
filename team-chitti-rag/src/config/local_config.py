@@ -8,6 +8,29 @@ from pydantic_settings import BaseSettings
 from pydantic import Field
 
 
+def _clean_inline_comment(value: str) -> str:
+    """Best-effort cleanup for dotenv values that may include inline comments."""
+    if not isinstance(value, str):
+        return value
+    # Split on first '#', then take first whitespace-separated token.
+    value = value.split('#', 1)[0].strip()
+    return value.split()[0] if value else value
+
+
+def _resolve_device(device: str) -> str:
+    """Resolve 'auto' device selection into 'cuda' (if available) else 'cpu'."""
+    device = _clean_inline_comment(device).lower() if device else "cpu"
+    if device != "auto":
+        return device
+
+    try:
+        import torch
+
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    except Exception:
+        return "cpu"
+
+
 class LocalConfig(BaseSettings):
     """Configuration for local/offline components"""
     
@@ -63,6 +86,15 @@ def get_local_config() -> LocalConfig:
     """Get validated local configuration"""
     try:
         config = LocalConfig()
+
+        # Normalize device fields for local execution
+        config.phi3_device = _resolve_device(config.phi3_device)
+        config.tinyllama_device = _resolve_device(config.tinyllama_device)
+        config.local_embedding_device = _resolve_device(config.local_embedding_device)
+
+        # Ensure FAISS index path has a stable extension for sidecar metadata.
+        if config.faiss_index_path and not str(config.faiss_index_path).endswith(".faiss"):
+            config.faiss_index_path = str(config.faiss_index_path) + ".faiss"
         
         # Create necessary directories
         os.makedirs(config.data_dir, exist_ok=True)

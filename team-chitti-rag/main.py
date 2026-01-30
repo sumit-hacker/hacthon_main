@@ -7,8 +7,10 @@ import sys
 import logging
 from pathlib import Path
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+# Add project root to path so `import src.*` works
+project_root = Path(__file__).parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 from src.config.mode_selector import mode_selector, RAGMode
 from src.config.hybrid_config import hybrid_config

@@ -45,7 +45,7 @@ class ModeSelector:
             database="atlas"
         ),
         RAGMode.LOCAL: ComponentChoice(
-            llm="phi3",
+            llm="tinyllama",  # Default to TinyLlama for lower resource usage
             embeddings="local",
             vectorstore="faiss", 
             database="local"
@@ -66,6 +66,19 @@ class ModeSelector:
             if not custom_config:
                 custom_config = self._get_hybrid_config_from_env()
             self.config = custom_config
+        else:
+            self.config = self.MODE_CONFIGS[self.mode]
+
+    def reload_from_env(self) -> None:
+        """Reload mode + component selection from environment variables.
+
+        Important: this mutates the existing instance (instead of replacing it)
+        so any modules that imported `mode_selector` keep working.
+        """
+        self.mode = self._get_mode_from_env()
+
+        if self.mode == RAGMode.HYBRID:
+            self.config = self._get_hybrid_config_from_env()
         else:
             self.config = self.MODE_CONFIGS[self.mode]
     
