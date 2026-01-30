@@ -1,0 +1,52 @@
+[
+  {
+    "title": "Understanding the New Education Policy 2020",
+    "url": "https://www.education.gov.in/nep/",
+    "description": "Official NEP 2020 documentation and guidelines"
+  },
+  {
+    "title": "NCERT Educational Resources",
+    "url": "https://ncert.nic.in/",
+    "description": "National Council of Educational Research and Training resources"
+  },
+  {
+    "title": "UGC Higher Education Guidelines", 
+    "url": "https://www.ugc.ac.in/",
+    "description": "University Grants Commission policies and regulations"
+  },
+  {
+    "title": "DIKSHA Digital Learning Platform",
+    "url": "https://diksha.gov.in/",
+    "description": "National digital infrastructure for teachers and students"
+  },
+  {
+    "title": "Ministry of Education Annual Reports",
+    "url": "https://www.education.gov.in/documents_reports",
+    "description": "Annual educational statistics and policy reports"
+  },
+  {
+    "title": "All India Survey on Higher Education (AISHE)",
+    "url": "https://www.education.gov.in/en/aishe-report",
+    "description": "Comprehensive higher education data and trends"
+  },
+  {
+    "title": "National Sample Survey on Education",
+    "url": "https://www.mospi.gov.in/",
+    "description": "Statistical data on educational participation and outcomes"
+  },
+  {
+    "title": "UNESCO Education Reports on India",
+    "url": "https://en.unesco.org/countries/india",
+    "description": "International perspective on Indian education system"
+  },
+  {
+    "title": "NITI Aayog Education Sector Analysis",
+    "url": "https://www.niti.gov.in/",
+    "description": "Policy think tank analysis on education reforms"
+  },
+  {
+    "title": "Educational Statistics at a Glance",
+    "url": "https://www.education.gov.in/sites/upload_files/mhrd/files/statistics-new/ESAG-2018.pdf",
+    "description": "Comprehensive educational statistics compilation"
+  }
+]

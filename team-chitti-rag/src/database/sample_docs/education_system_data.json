@@ -1,0 +1,109 @@
+{
+  "education_system": {
+    "name": "Indian Education System",
+    "type": "K-12 and Higher Education",
+    "structure": {
+      "foundational_stage": {
+        "age_range": "3-8 years",
+        "duration": "5 years",
+        "grades": ["Pre-K", "Kindergarten", "1", "2"],
+        "focus": ["Play-based learning", "Foundational literacy", "Numeracy", "Social skills"]
+      },
+      "preparatory_stage": {
+        "age_range": "8-11 years", 
+        "duration": "3 years",
+        "grades": ["3", "4", "5"],
+        "focus": ["Reading comprehension", "Mathematical concepts", "Environmental awareness", "Arts and crafts"]
+      },
+      "middle_stage": {
+        "age_range": "11-14 years",
+        "duration": "3 years", 
+        "grades": ["6", "7", "8"],
+        "focus": ["Subject-specific learning", "Scientific thinking", "Social sciences", "Second language"]
+      },
+      "secondary_stage": {
+        "age_range": "14-18 years",
+        "duration": "4 years",
+        "grades": ["9", "10", "11", "12"],
+        "focus": ["Specialization", "Career preparation", "Research skills", "Critical thinking"]
+      }
+    },
+    "boards": [
+      {
+        "name": "Central Board of Secondary Education",
+        "abbreviation": "CBSE",
+        "type": "Central",
+        "medium": ["English", "Hindi"],
+        "schools": 27000,
+        "students": 30000000
+      },
+      {
+        "name": "Indian Certificate of Secondary Education", 
+        "abbreviation": "ICSE",
+        "type": "Private",
+        "medium": ["English"],
+        "schools": 2400,
+        "students": 2500000
+      },
+      {
+        "name": "State Boards",
+        "abbreviation": "Various",
+        "type": "State",
+        "medium": ["Regional languages", "English"],
+        "schools": 1400000,
+        "students": 200000000
+      }
+    ],
+    "higher_education": {
+      "universities": 1043,
+      "colleges": 42343,
+      "students": 38500000,
+      "gross_enrollment_ratio": 27.1,
+      "top_institutions": [
+        {
+          "name": "Indian Institutes of Technology",
+          "type": "Technical",
+          "campuses": 23,
+          "established": 1951
+        },
+        {
+          "name": "Indian Institutes of Management", 
+          "type": "Management",
+          "campuses": 20,
+          "established": 1961
+        },
+        {
+          "name": "All India Institute of Medical Sciences",
+          "type": "Medical",
+          "campuses": 22,
+          "established": 1956
+        }
+      ]
+    },
+    "challenges": [
+      "Access and equity",
+      "Quality of education", 
+      "Teacher shortage",
+      "Infrastructure gaps",
+      "Digital divide",
+      "Examination pressure"
+    ],
+    "initiatives": [
+      "National Education Policy 2020",
+      "Digital India in Education",
+      "Samagra Shiksha",
+      "PM POSHAN",
+      "SWAYAM",
+      "DIKSHA"
+    ],
+    "statistics": {
+      "total_schools": 1500000,
+      "government_schools": 1000000,
+      "private_schools": 500000,
+      "teachers": 9000000,
+      "students": 250000000,
+      "literacy_rate": 77.7,
+      "budget_allocation": "4.6% of GDP"
+    }
+  }
+}
