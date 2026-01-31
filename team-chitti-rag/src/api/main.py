@@ -18,6 +18,7 @@ import gc
 import json
 import os
 import re
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -102,6 +103,9 @@ class ChatResponse(BaseModel):
     answer: str
     mode: Dict[str, Any]
     sources: List[Dict[str, Any]] = Field(default_factory=list)
+    # Safe UX metadata (no chain-of-thought)
+    used_rag: bool = False
+    timings_ms: Dict[str, float] = Field(default_factory=dict)
 
 
 class BuildIndexRequest(BaseModel):
@@ -470,6 +474,7 @@ def rag_build_index_alias(req: BuildIndexRequest = Body(default=BuildIndexReques
 @app.post(f"{API_PREFIX}/chat", response_model=ChatResponse)
 def chat(req: ChatRequest) -> ChatResponse:
     try:
+        t0 = time.perf_counter()
         mode_info = mode_selector.get_mode_info()
 
         # Always handle trivial/small-talk upfront.
@@ -484,6 +489,8 @@ def chat(req: ChatRequest) -> ChatResponse:
                     ),
                     mode=mode_info,
                     sources=[],
+                    used_rag=False,
+                    timings_ms={"total": (time.perf_counter() - t0) * 1000.0},
                 )
 
             return ChatResponse(
@@ -494,6 +501,8 @@ def chat(req: ChatRequest) -> ChatResponse:
                 ),
                 mode=mode_info,
                 sources=[],
+                used_rag=False,
+                timings_ms={"total": (time.perf_counter() - t0) * 1000.0},
             )
 
         # Decide whether to use RAG.
@@ -503,22 +512,41 @@ def chat(req: ChatRequest) -> ChatResponse:
 
         if not use_rag:
             llm = get_llm()
+            t_gen0 = time.perf_counter()
             answer = llm.generate(req.message, system_message=SARAS_SYSTEM_BASE, max_tokens=req.max_tokens)
-            return ChatResponse(answer=answer, mode=mode_info, sources=[])
+            t1 = time.perf_counter()
+            return ChatResponse(
+                answer=answer,
+                mode=mode_info,
+                sources=[],
+                used_rag=False,
+                timings_ms={"generation": (t1 - t_gen0) * 1000.0, "total": (t1 - t0) * 1000.0},
+            )
 
         # With RAG
+        t_retr0 = time.perf_counter()
         index_path = _resolve_faiss_index_path()
         index = _load_or_build_faiss(index_path)
         if index.get_vector_count() == 0:
             if req.use_rag is True:
                 raise HTTPException(status_code=400, detail="FAISS index is empty. Build it via /api/rag/index/build")
             llm = get_llm()
+            t_gen0 = time.perf_counter()
             answer = llm.generate(req.message, system_message=SARAS_SYSTEM_BASE, max_tokens=req.max_tokens)
-            return ChatResponse(answer=answer, mode=mode_info, sources=[])
+            t1 = time.perf_counter()
+            return ChatResponse(
+                answer=answer,
+                mode=mode_info,
+                sources=[],
+                used_rag=False,
+                timings_ms={"retrieval": (t1 - t_retr0) * 1000.0, "generation": (t1 - t_gen0) * 1000.0, "total": (t1 - t0) * 1000.0},
+            )
 
         embeddings = get_embeddings(force_reload=True)
         qvec = _l2_normalize(embeddings.embed_text(req.message))
         hits = index.search_with_metadata(qvec, k=req.top_k)
+
+        t_after_retr = time.perf_counter()
 
         clear_embeddings_cache()
         gc.collect()
@@ -527,12 +555,24 @@ def chat(req: ChatRequest) -> ChatResponse:
         max_score = max((h.get("score") or -1.0) for h in hits) if hits else -1.0
         if max_score < _rag_min_score():
             llm = get_llm()
+            t_gen0 = time.perf_counter()
             answer = llm.generate(
                 req.message,
                 system_message=SARAS_SYSTEM_BASE,
                 max_tokens=req.max_tokens,
             )
-            return ChatResponse(answer=answer, mode=mode_info, sources=[])
+            t1 = time.perf_counter()
+            return ChatResponse(
+                answer=answer,
+                mode=mode_info,
+                sources=[],
+                used_rag=False,
+                timings_ms={
+                    "retrieval": (t_after_retr - t_retr0) * 1000.0,
+                    "generation": (t1 - t_gen0) * 1000.0,
+                    "total": (t1 - t0) * 1000.0,
+                },
+            )
 
         context_parts: List[str] = []
         for hit in hits:
@@ -552,7 +592,9 @@ def chat(req: ChatRequest) -> ChatResponse:
             "If you used the context, stay consistent with it."
         )
         prompt = f"REFERENCE CONTEXT (use if helpful):\n{context}\n\nUSER: {req.message}\n\nSARAS:"
+        t_gen0 = time.perf_counter()
         answer = llm.generate(prompt, system_message=system, max_tokens=req.max_tokens)
+        t1 = time.perf_counter()
 
         # Return sources without full content by default (frontend can show preview)
         sources = [
@@ -564,7 +606,17 @@ def chat(req: ChatRequest) -> ChatResponse:
             for h in hits
         ]
 
-        return ChatResponse(answer=answer, mode=mode_info, sources=sources)
+        return ChatResponse(
+            answer=answer,
+            mode=mode_info,
+            sources=sources,
+            used_rag=True,
+            timings_ms={
+                "retrieval": (t_after_retr - t_retr0) * 1000.0,
+                "generation": (t1 - t_gen0) * 1000.0,
+                "total": (t1 - t0) * 1000.0,
+            },
+        )
 
     except HTTPException:
         raise

@@ -3,9 +3,21 @@ import './App.css'
 import { api, type RagMode } from './lib/api'
 
 type ChatTurn = {
+  id: string
   role: 'user' | 'assistant'
   content: string
   sources?: Array<{ source_file?: string; chunk_id?: string; score?: number }>
+  pending?: boolean
+  used_rag?: boolean
+  timings_ms?: Record<string, number>
+}
+
+function newId() {
+  // crypto.randomUUID is not available in all environments
+  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (crypto as any).randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
 function App() {
@@ -30,7 +42,7 @@ function App() {
   const canUseOpenAI = ragMode === 'online'
 
   const title = useMemo(() => {
-    return 'Team Chitti RAG – Control Panel'
+    return 'Team SARAS RAG – Control Panel'
   }, [])
 
   async function refreshStatus() {
@@ -176,7 +188,13 @@ function App() {
     if (!trimmed) return
 
     setMessage('')
-    setChat((prev) => [...prev, { role: 'user', content: trimmed }])
+    const userId = newId()
+    const pendingId = newId()
+    setChat((prev) => [
+      ...prev,
+      { id: userId, role: 'user', content: trimmed },
+      { id: pendingId, role: 'assistant', content: '', pending: true },
+    ])
     setBusy('Thinking…')
 
     try {
@@ -186,9 +204,23 @@ function App() {
         use_rag: ragPolicy === 'auto' ? undefined : ragPolicy === 'on',
         top_k: topK,
       })
-      setChat((prev) => [...prev, { role: 'assistant', content: resp.answer, sources: resp.sources }])
+      setChat((prev) =>
+        prev.map((t) =>
+          t.id === pendingId
+            ? {
+                ...t,
+                pending: false,
+                content: resp.answer,
+                sources: resp.sources,
+                used_rag: resp.used_rag,
+                timings_ms: resp.timings_ms,
+              }
+            : t,
+        ),
+      )
     } catch (e) {
       setErrorText(e instanceof Error ? e.message : 'Chat failed')
+      setChat((prev) => prev.filter((t) => !t.pending))
     } finally {
       setBusy(null)
     }
@@ -314,9 +346,23 @@ function App() {
               <div className="subtle">Send a message to begin. Set RAG to Auto/On/Off to compare outputs.</div>
             ) : (
               chat.map((t, idx) => (
-                <div key={idx} className={`turn ${t.role}`}>
+                <div key={t.id || idx} className={`turn ${t.role}`}>
                   <div className="role">{t.role}</div>
-                  <div className="content">{t.content}</div>
+                  <div className="content">
+                    {t.pending ? (
+                      <span className="typing">
+                        Saras is typing<span className="dots"><span>.</span><span>.</span><span>.</span></span>
+                      </span>
+                    ) : (
+                      t.content
+                    )}
+                  </div>
+                  {t.role === 'assistant' && !t.pending ? (
+                    <div className="subtle">
+                      {typeof t.used_rag === 'boolean' ? (t.used_rag ? 'Used documents (RAG)' : 'No documents used') : ''}
+                      {t.timings_ms?.total ? ` · ${Math.round(t.timings_ms.total)}ms` : ''}
+                    </div>
+                  ) : null}
                   {t.role === 'assistant' && t.sources && t.sources.length > 0 ? (
                     <div className="sources">
                       <div className="label">Sources</div>

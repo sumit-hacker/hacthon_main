@@ -42,6 +42,8 @@ export type ChatRequest = {
 export type ChatResponse = {
   answer: string
   sources?: Array<{ source_file?: string; chunk_id?: string; score?: number }>
+  used_rag?: boolean
+  timings_ms?: Record<string, number>
 }
 
 export type StatusResponse = {
