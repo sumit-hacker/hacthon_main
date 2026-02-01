@@ -25,3 +25,6 @@ team-chitti-rag/logs/
 
 # Scratch
 bash_runned.md
+
+.gitignore
+team-chitti-rag/
